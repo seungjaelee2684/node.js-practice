@@ -3,7 +3,7 @@ const router = express.Router();
 const imageUploader = require('../database/S3storage');
 const connection = require('../database/MySQL');
 const jwt = require('jsonwebtoken');
-const secretKey = require('../app/config/jwt');
+const secretKey = require('../config/jwt');
 
 // 강사 전체목록 조회 api
 router.get('/', async function (req, res) {

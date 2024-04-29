@@ -1,9 +1,9 @@
+require('dotenv').config({path: '../.env'});
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const app = express();
 const session = require('express-session');
-const connectMongoDB = require("./database/MongoDB");
 const connectMySQL = require('./database/MySQL');
 const cookieParser = require('cookie-parser');
 const post = require('./routes/PostApiRouter');
@@ -13,7 +13,7 @@ const operator = require('./routes/operatorRouter');
 const banner = require('./routes/bannerRouter');
 const update = require('./routes/updateRouter');
 
-const PORT = process.env.PORT || 8080;
+const PORT = 8080;
 
 const corsOptions = {
     origin: ['https://www.aria-academy.com', 'http://localhost:3000', 'http://localhost:8080'], // 허용할 출처
@@ -52,11 +52,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api', post);
-app.use('/api/mentors', mentor);
-app.use('/api/notice', notice);
+// app.use('/api/mentors', mentor);
+// app.use('/api/notice', notice);
 app.use('/api/certification', operator);
-app.use('/api/banners', banner);
-app.use('/api/update', update);
+// app.use('/api/banners', banner);
+// app.use('/api/update', update);
 
 connectMySQL.connect();
 

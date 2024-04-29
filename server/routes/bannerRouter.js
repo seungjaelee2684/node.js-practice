@@ -3,7 +3,7 @@ const router = express.Router();
 const imageUploader = require('../database/S3storage');
 const connection = require('../database/MySQL');
 const jwt = require('jsonwebtoken');
-const secretKey = require('../app/config/jwt');
+const secretKey = require('../config/jwt');
 
 // 강사 슬라이드 배너 api
 router.get('/mentors', async function (req, res) {
