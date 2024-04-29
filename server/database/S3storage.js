@@ -19,7 +19,7 @@ const imageUploader = multer({
     storage: multerS3({
         s3: s3Client,
         acl: 'public-read-write',
-        bucket: 'ariaacademy',
+        bucket: 'aria-academy',
         contentType: multerS3.AUTO_CONTENT_TYPE,
         key: async (req, file, callback) => {
             const uploadDirectory = req.query.directory ?? '';
