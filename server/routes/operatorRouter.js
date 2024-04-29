@@ -2,20 +2,19 @@ const express = require('express');
 const router = express.Router();
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
-const secretKey = require('../app/config/jwt');
-const SECRET_KEY = secretKey;
-const PERMISSION = require('../app/config/permission');
+const PERMISSION = require('../config/permission');
 
 router.post('/', async function (req, res) {
-    const authenticationKey = PERMISSION?.AUTHENTICATION_KEY;
-    const permissionId = PERMISSION?.PERMISSION_IDS;
+    const authenticationKey = process.env.AUTHENTICATION_KEY;
+    const permissionId = PERMISSION?.PERMISSION_ID;
+    const secretKey = process.env.SECRET_KEY;
     const { operateId, password } = req?.body;
     try {
         if ((password === authenticationKey) && permissionId.includes(operateId)) {
             const jwtToken = jwt.sign({
                 type: "JWT",
                 state: "Operator"
-            }, SECRET_KEY, {
+            }, secretKey, {
                 expiresIn: "1h",
                 issuer: "op"
             });
