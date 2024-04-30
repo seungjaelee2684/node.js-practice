@@ -8,7 +8,7 @@ const AWS = require('aws-sdk');
 
 // 강사 추가 api
 router.post('/mentors/upload', imageUploader.fields([
-    { name: "images", maxCount: 30 },
+    { name: "images", maxCount: 33 },
     { name: "mentorInfoData" },
     { name: "SNS" }
 ]), async function (req, res) {

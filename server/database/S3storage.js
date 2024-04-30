@@ -12,7 +12,7 @@ AWS.config.update({
 
 const s3Client = new S3Client();
 
-const allowedExtensions = ['.png', '.jpg', '.jpeg', '.bmp', '.webp'];
+const allowedExtensions = ['.png', '.jpg', '.jpeg', '.bmp', '.webp', '.gif'];
 
 const imageUploader = multer({
     storage: multerS3({
