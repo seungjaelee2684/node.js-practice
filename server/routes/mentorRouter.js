@@ -15,31 +15,20 @@ router.get('/', async function (req, res) {
     const startIndex = parseInt(size * (page - 1));
     const newDate = new Date();
 
-    if (!token) {
-        res.status(201).json({
-            message: "강사목록 조회 완료!",
-            status: 201,
-            isOperator: false,
-            totalNumber: total[0].total_rows,
-            ...mentorListData
-        });
-        return;
-    };
-
     try {
         const mentorInfo = await new Promise((resolve, reject) => {
             connection.query(
                 `${(nationstatus === "All")
-                    ? `SELECT mentors.*, links.twitter
-                        FROM mentors
-                        INNER JOIN links ON mentors.mentorsId = links.mentorsId
-                        ORDER BY mentors.mentorsId DESC
+                    ? `SELECT m.mentorsId, m.nickname, m.englishname, m.japanesename, m.thumbnailImage, m.nation, m.opendate, m.createdAt, m.updatedAt, links.twitter
+                        FROM mentors AS m
+                        INNER JOIN links ON m.mentorsId = links.mentorsId
+                        ORDER BY m.mentorsId DESC
                         LIMIT ?, ?;`
-                    : `SELECT mentors.*, links.twitter
-                        FROM mentors
-                        INNER JOIN links ON mentors.mentorsId = links.mentorsId
+                    : `SELECT m.mentorsId, m.nickname, m.englishname, m.japanesename, m.thumbnailImage, m.nation, m.opendate, m.createdAt, m.updatedAt, links.twitter
+                        FROM mentors AS m
+                        INNER JOIN links ON m.mentorsId = links.mentorsId
                         WHERE mentors.nation IN ?
-                        ORDER BY mentors.mentorsId DESC
+                        ORDER BY m.mentorsId DESC
                         LIMIT ?, ?;`}`,
                 (nationstatus === "All") ? [startIndex, size] : [nationstatus, startIndex, size],
                 async function (error, results, fields) {
@@ -81,6 +70,17 @@ router.get('/', async function (req, res) {
         });
 
         const mentorListData = { mentorListData: mentorsDto };
+
+        if (!token) {
+            res.status(201).json({
+                message: "강사목록 조회 완료!",
+                status: 201,
+                isOperator: false,
+                totalNumber: total[0].total_rows,
+                ...mentorListData
+            });
+            return;
+        };
 
         async function verifyToken(token, secret) {
             try {
@@ -133,36 +133,10 @@ router.get('/:mentorsId', async function (req, res) {
     const mentorsId = req.params.mentorsId;
 
     try {
-        const curriculumENG = await new Promise((resolve, reject) => {
+        const curriculum = await new Promise((resolve, reject) => {
             connection.query(
-                `SELECT imageUrl
-                FROM curriculum_image_ENG
-                WHERE mentorsId = ?;`,
-                [mentorsId],
-                async function (error, results, fields) {
-                    if (error) throw error;
-                    resolve(results);
-                }
-            );
-        });
-
-        const curriculumJPN = await new Promise((resolve, reject) => {
-            connection.query(
-                `SELECT imageUrl
-                FROM curriculum_image_JPN
-                WHERE mentorsId = ?;`,
-                [mentorsId],
-                async function (error, results, fields) {
-                    if (error) throw error;
-                    resolve(results);
-                }
-            );
-        });
-
-        const curriculumKOR = await new Promise((resolve, reject) => {
-            connection.query(
-                `SELECT imageUrl
-                FROM curriculum_image_KOR
+                `SELECT imageUrl, languageData
+                FROM curriculum_image
                 WHERE mentorsId = ?;`,
                 [mentorsId],
                 async function (error, results, fields) {
@@ -199,6 +173,9 @@ router.get('/:mentorsId', async function (req, res) {
 
         const linkData = Object.keys(link[0]).map((key) => ({ link: link[0][key] }));
         const portfolioImages = portfolio.map((img) => img.imageUrl);
+        const curriculumENG = curriculum.filter((image) => image.languageData === "ENG").map((item) => item.imageUrl);
+        const curriculumJPN = curriculum.filter((image) => image.languageData === "JPN").map((item) => item.imageUrl);
+        const curriculumKOR = curriculum.filter((image) => image.languageData === "KOR").map((item) => item.imageUrl);
 
         const mentorDetailData = {
             mentorsId: mentorsId,
@@ -213,49 +190,51 @@ router.get('/:mentorsId', async function (req, res) {
             }
         };
 
-        if (token) {
-            async function verifyToken(token, secret) {
-                try {
-                    const decoded = await jwt.verify(token, secret);
-                    return true;
-                } catch (error) {
-                    return false;
-                };
-            };
-
-            verifyToken(token, secretKey)
-                .then((isTokenValid) => {
-                    if (isTokenValid) {
-                        res.status(200).json({
-                            message: "강사 조회 완료!",
-                            status: 200,
-                            isOperator: true,
-                            ...mentorDetailData
-                        });
-                    } else {
-                        res.status(201).json({
-                            message: "강사 조회 완료!",
-                            status: 201,
-                            isOperator: false,
-                            ...mentorDetailData
-                        });
-                    };
-                })
-                .catch((error) => {
-                    console.error(error);
-                    res.status(500).json({
-                        message: "서버 오류...!",
-                        status: 500
-                    });
-                });
-        } else {
+        if (!token) {
             res.status(201).json({
                 message: "강사 조회 완료!",
                 status: 201,
                 isOperator: false,
                 ...mentorDetailData
             });
+            return;
         };
+        async function verifyToken(token, secret) {
+            try {
+                const decoded = await jwt.verify(token, secret);
+                return true;
+            } catch (error) {
+                return false;
+            };
+        };
+
+        verifyToken(token, secretKey)
+            .then((isTokenValid) => {
+                if (!isTokenValid) {
+                    res.status(201).json({
+                        message: "강사 조회 완료!",
+                        status: 201,
+                        isOperator: false,
+                        ...mentorDetailData
+                    });
+                    return;  
+                };
+
+                res.status(200).json({
+                    message: "강사 조회 완료!",
+                    status: 200,
+                    isOperator: true,
+                    ...mentorDetailData
+                });
+            })
+            .catch((error) => {
+                console.error(error);
+                res.status(500).json({
+                    message: "서버 오류...!",
+                    status: 500
+                });
+            });
+
     } catch (error) {
         console.error(error);
         res.status(403).json({

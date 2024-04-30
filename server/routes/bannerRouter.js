@@ -13,11 +13,9 @@ router.get('/mentors', async function (req, res) {
     try {
         const banner = await new Promise((resolve, reject) => {
             connection.query(
-                `SELECT mentors.mentorsId, mentors.nickname, mentors.opendate, banner_image.imageUrl AS bannerImageUrl, nickname_image.imageUrl AS nicknameImageUrl
-                FROM mentors
-                INNER JOIN banner_image ON mentors.mentorsId = banner_image.mentorsId
-                INNER JOIN nickname_image ON mentors.mentorsId = nickname_image.mentorsId
-                ORDER BY mentors.mentorsId DESC
+                `SELECT m.mentorsId, m.nickname, m.opendate, m.bannerImage, m.nicknameImage
+                FROM mentors AS m
+                ORDER BY m.mentorsId DESC
                 LIMIT 5;`,
                 async function (error, results, fields) {
                     if (error) throw error;
@@ -33,50 +31,50 @@ router.get('/mentors', async function (req, res) {
 
         const bannerData = { bannerData: isOpenMentor }
 
-        if (token) {
-            async function verifyToken (token, secret) {
-                try {
-                    const decoded = await jwt.verify(token, secret);
-                    return true;
-                } catch (error) {
-                    return false;
-                };
-            };
-
-            verifyToken(token, secretKey)
-                .then((isTokenValid) => {
-                    if (isTokenValid) {
-                        res.status(200).json({
-                            message: "정보 조회 성공",
-                            status: 200,
-                            isOperator: true,
-                            ...bannerData
-                        });
-                    } else {
-                        res.status(201).json({
-                            message: "정보 조회 성공",
-                            status: 201,
-                            isOperator: false,
-                            ...bannerData
-                        });
-                    };
-                })
-                .catch((error) => {
-                    console.error(error);
-                    res.status(500).json({
-                        message: "서버 오류...!",
-                        status: 500
-                    });
-                });
-        } else {
+        if (!token) {
             res.status(201).json({
                 message: "정보 조회 성공",
                 status: 201,
                 isOperator: false,
                 ...bannerData
             });
+            return;
         };
 
+        async function verifyToken(token, secret) {
+            try {
+                const decoded = await jwt.verify(token, secret);
+                return true;
+            } catch (error) {
+                return false;
+            };
+        };
+
+        verifyToken(token, secretKey)
+            .then((isTokenValid) => {
+                if (!isTokenValid) {
+                    res.status(201).json({
+                        message: "정보 조회 성공",
+                        status: 201,
+                        isOperator: false,
+                        ...bannerData
+                    });
+                    return;
+                };
+                res.status(200).json({
+                    message: "정보 조회 성공",
+                    status: 200,
+                    isOperator: true,
+                    ...bannerData
+                });
+            })
+            .catch((error) => {
+                console.error(error);
+                res.status(500).json({
+                    message: "서버 오류...!",
+                    status: 500
+                });
+            });
     } catch (error) {
         console.error(error);
         res.status(403).json({
