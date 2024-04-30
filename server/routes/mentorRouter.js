@@ -27,7 +27,7 @@ router.get('/', async function (req, res) {
                     : `SELECT m.mentorsId, m.nickname, m.englishname, m.japanesename, m.thumbnailImage, m.nation, m.opendate, m.createdAt, m.updatedAt, links.twitter
                         FROM mentors AS m
                         INNER JOIN links ON m.mentorsId = links.mentorsId
-                        WHERE mentors.nation IN ?
+                        WHERE m.nation = ?
                         ORDER BY m.mentorsId DESC
                         LIMIT ?, ?;`}`,
                 (nationstatus === "All") ? [startIndex, size] : [nationstatus, startIndex, size],
