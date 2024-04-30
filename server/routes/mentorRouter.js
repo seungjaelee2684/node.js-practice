@@ -8,27 +8,37 @@ const secretKey = require('../config/jwt');
 // 강사 전체목록 조회 api
 router.get('/', async function (req, res) {
     const token = req?.headers["authorization"];
-    const page = parseInt(req.query.page);
-    const size = parseInt(req.query.size);
-    const nationstatus = req.query.nationstatus;
+    const page = parseInt(req?.query.page);
+    const size = parseInt(req?.query.size);
+    const nationstatus = req?.query.nationstatus;
+    const search = req?.query.search;
     const startIndex = parseInt(size * (page - 1));
     const newDate = new Date();
+
+    if (!token) {
+        res.status(201).json({
+            message: "강사목록 조회 완료!",
+            status: 201,
+            isOperator: false,
+            totalNumber: total[0].total_rows,
+            ...mentorListData
+        });
+        return;
+    };
 
     try {
         const mentorInfo = await new Promise((resolve, reject) => {
             connection.query(
                 `${(nationstatus === "All")
-                    ? `SELECT mentors.*, thumbnail_image.imageUrl AS thumbnailImage, links.twitter
+                    ? `SELECT mentors.*, links.twitter
                         FROM mentors
-                        INNER JOIN thumbnail_image ON mentors.mentorsId = thumbnail_image.mentorsId
                         INNER JOIN links ON mentors.mentorsId = links.mentorsId
                         ORDER BY mentors.mentorsId DESC
                         LIMIT ?, ?;`
-                    : `SELECT mentors.*, thumbnail_image.imageUrl AS thumbnailImage, links.twitter
+                    : `SELECT mentors.*, links.twitter
                         FROM mentors
-                        INNER JOIN thumbnail_image ON mentors.mentorsId = thumbnail_image.mentorsId
                         INNER JOIN links ON mentors.mentorsId = links.mentorsId
-                        WHERE mentors.nation = ?
+                        WHERE mentors.nation IN ?
                         ORDER BY mentors.mentorsId DESC
                         LIMIT ?, ?;`}`,
                 (nationstatus === "All") ? [startIndex, size] : [nationstatus, startIndex, size],
@@ -52,60 +62,62 @@ router.get('/', async function (req, res) {
         const mentorData = mentorInfo.map((item) => {
             const targetDate = new Date(item?.opendate);
             if (newDate >= targetDate) {
-                return {...item, isopen: true};
+                return { ...item, isopen: true };
             } else {
-                return {...item, isopen: false};
+                return { ...item, isopen: false };
             };
         });
 
-        const mentorListData = { mentorListData: mentorData };
-
-        if (token) {
-            async function verifyToken (token, secret) {
-                try {
-                    const decoded = await jwt.verify(token, secret);
-                    return true;
-                } catch (error) {
-                    return false;
-                };
+        const mentorsDto = mentorData?.filter((item) => {
+            if (!search) {
+                return true;
+            } else {
+                return (
+                    item.englishname.includes(search) ||
+                    item.japanesename.includes(search) ||
+                    item.nickname.includes(search)
+                );
             };
+        });
 
-            verifyToken(token, secretKey)
-                .then((isTokenValid) => {
-                    if (isTokenValid) {
-                        res.status(200).json({
-                            message: "강사목록 조회 완료!",
-                            status: 200,
-                            isOperator: true,
-                            totalNumber: total[0].total_rows,
-                            ...mentorListData
-                        });
-                    } else {
-                        res.status(201).json({
-                            message: "강사목록 조회 완료!",
-                            status: 201,
-                            isOperator: false,
-                            totalNumber: total[0].total_rows,
-                            ...mentorListData
-                        });
-                    };
-                })
-                .catch((error) => {
-                    console.error(error);
-                    res.status(500).json({
-                        message: "서버 오류...!",
-                        status: 500
-                    });
-                });
-        } else {
-            res.status(201).json({
-                message: "강사목록 조회 완료!",
-                status: 201,
-                isOperator: false,
-                totalNumber: total[0].total_rows,
-                ...mentorListData
-            });
+        const mentorListData = { mentorListData: mentorsDto };
+
+        async function verifyToken(token, secret) {
+            try {
+                const decoded = await jwt.verify(token, secret);
+                return true;
+            } catch (error) {
+                return false;
+            };
         };
+
+        verifyToken(token, secretKey)
+            .then((isTokenValid) => {
+                if (!isTokenValid) {
+                    res.status(201).json({
+                        message: "강사목록 조회 완료!",
+                        status: 201,
+                        isOperator: false,
+                        totalNumber: total[0].total_rows,
+                        ...mentorListData
+                    });
+                    return;
+                };
+                res.status(200).json({
+                    message: "강사목록 조회 완료!",
+                    status: 200,
+                    isOperator: true,
+                    totalNumber: total[0].total_rows,
+                    ...mentorListData
+                });
+            })
+            .catch((error) => {
+                console.error(error);
+                res.status(500).json({
+                    message: "서버 오류...!",
+                    status: 500
+                });
+            });
     } catch (error) {
         console.error(error);
         res.status(403).json({
@@ -185,7 +197,7 @@ router.get('/:mentorsId', async function (req, res) {
             );
         });
 
-        const linkData = Object.keys(link[0]).map((key) => ({link: link[0][key]}));
+        const linkData = Object.keys(link[0]).map((key) => ({ link: link[0][key] }));
         const portfolioImages = portfolio.map((img) => img.imageUrl);
 
         const mentorDetailData = {
@@ -202,7 +214,7 @@ router.get('/:mentorsId', async function (req, res) {
         };
 
         if (token) {
-            async function verifyToken (token, secret) {
+            async function verifyToken(token, secret) {
                 try {
                     const decoded = await jwt.verify(token, secret);
                     return true;

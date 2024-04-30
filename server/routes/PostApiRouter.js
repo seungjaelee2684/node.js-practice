@@ -20,10 +20,11 @@ router.post('/mentors/upload', imageUploader.fields([
     const date = `${year}-${month < 10 ? '0' : ''}${month}-${day < 10 ? '0' : ''}${day}`;
 
     if (!token) {
-        return res.status(401).json({
+        res.status(401).json({
             message: "토큰 인증 실패...!",
             status: 401
         });
+        return;
     };
 
     async function verifyToken(token, secret) {
@@ -38,22 +39,23 @@ router.post('/mentors/upload', imageUploader.fields([
     verifyToken(token, secretKey)
         .then((isTokenValid) => {
             if (!isTokenValid) {
-                return res.status(401).json({
+                res.status(401).json({
                     message: "토큰 인증 실패...!",
                     status: 401
                 });
+                return;
             };
 
             try {
-                const images = req.files['images'] ? req.files['images'][0]?.location : [null];
+                const images = req.files['images'] ? req.files['images']?.map((file) => file.location) : [null];
                 const { englishname, japanesename, nickname, nation, opendate } = JSON.parse(req.body["mentorInfoData"]);
                 const { home, youtube, twitter, instagram, artstation, pixiv } = JSON.parse(req.body["SNS"]);
 
-                const bannerImage = images[0] ? images.filter((image) => image.includes("banner")) : [null];
-                const nicknameImage = images[0] ? images.filter((image) => image.includes("nickname")) : [null];
-                const thumbnailImage = images[0] ? images.filter((image) => image.includes("thumbnail")) : [null];
-                const curriculum = images[0] ? images.filter((image) => image.includes("curriculum")) : [null];
-                const portfolio = images[0] ? images.filter((image) => image.includes("portfolio")) : [null];
+                const bannerImage = images[0] ? images?.filter((image) => image.includes("banner")) : [null];
+                const nicknameImage = images[0] ? images?.filter((image) => image.includes("nickname")) : [null];
+                const thumbnailImage = images[0] ? images?.filter((image) => image.includes("thumbnail")) : [null];
+                const curriculum = images[0] ? images?.filter((image) => image.includes("curriculum")) : [null];
+                const portfolio = images[0] ? images?.filter((image) => image.includes("portfolio")) : [null];
 
                 connection.query(
                     `INSERT INTO mentors (englishname, japanesename, nickname, bannerImage, nicknameImage, thumbnailImage, nation, opendate, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,

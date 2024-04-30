@@ -52,7 +52,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api', post);
-// app.use('/api/mentors', mentor);
+app.use('/api/mentors', mentor);
 // app.use('/api/notice', notice);
 app.use('/api/certification', operator);
 // app.use('/api/banners', banner);
