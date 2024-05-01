@@ -5,12 +5,11 @@ const path = require('path');
 const { S3Client, HeadObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 AWS.config.update({
-    region: 'ap-northeast-2',
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 });
 
-const s3Client = new S3Client();
+const s3Client = new S3Client({ region: 'ap-northeast-2' });
 
 const allowedExtensions = ['.png', '.jpg', '.jpeg', '.bmp', '.webp', '.gif'];
 
