@@ -1,8 +1,11 @@
+const host = process.env.MYSQL_DATABASE_HOST;
+const password = process.env.MYSQL_DATABASE_PASSWORD
+
 module.exports = {
-    host: 'localhost',
+    host: host,
     port: '3306',
-    user: 'root',
-    password: 'rlawldus1682',
+    user: 'sean2684',
+    password: password,
     database: 'aria',
     waitForConnections: true,
     connectionLimit: 10,
