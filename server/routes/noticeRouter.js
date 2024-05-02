@@ -19,12 +19,14 @@ router.get('/', async function (req, res) {
         const noticeInfo = await new Promise((resolve, reject) => {
             connection.query(
                 `${(noticestatus === "All")
-                    ? `SELECT * FROM notice
-                        ORDER BY notice.noticeId DESC
+                    ? `SELECT n.title, n.englishTitle, n.japaneseTitle, n.thumbnail, n.writer, n.state, n.createdAt, n.updatedAt
+                        FROM notice AS n
+                        ORDER BY n.noticeId DESC
                         LIMIT ?, ?;`
-                    : `SELECT * FROM notice
-                        WHERE notice.state = ?
-                        ORDER BY notice.noticeId DESC
+                    : `SELECT n.title, n.englishTitle, n.japaneseTitle, n.thumbnail, n.writer, n.state, n.createdAt, n.updatedAt
+                        FROM notice AS n
+                        WHERE n.state = ?
+                        ORDER BY n.noticeId DESC
                         LIMIT ?, ?;`}`,
                 (noticestatus === "All") ? [startIndex, size] : [noticestatus, startIndex, size],
                 async function (error, results, fields) {
@@ -50,44 +52,7 @@ router.get('/', async function (req, res) {
 
         const noticeListData = { noticeListData: noticeInfo, totalCount: total.total_rows };
 
-        if (token) {
-            async function verifyToken (token, secret) {
-                try {
-                    const decoded = await jwt.verify(token, secret);
-                    return true;
-                } catch (error) {
-                    return false;
-                };
-            };
-
-            verifyToken(token, secretKey)
-                .then((isTokenValid) => {
-                    if (isTokenValid) {
-                        res.status(200).json({
-                            message: "공지목록 조회 완료!",
-                            status: 200,
-                            isOperator: true,
-                            totalNumber: total[0].total_rows,
-                            ...noticeListData
-                        });
-                    } else {
-                        res.status(201).json({
-                            message: "공지목록 조회 완료!",
-                            status: 201,
-                            isOperator: false,
-                            totalNumber: total[0].total_rows,
-                            ...noticeListData
-                        });
-                    };
-                })
-                .catch((error) => {
-                    console.error(error);
-                    res.status(500).json({
-                        message: "서버 오류...!",
-                        status: 500
-                    });
-                });
-        } else {
+        if (!token) {
             res.status(201).json({
                 message: "공지목록 조회 완료!",
                 status: 201,
@@ -95,7 +60,45 @@ router.get('/', async function (req, res) {
                 totalNumber: total[0].total_rows,
                 ...noticeListData
             });
+            return;
         };
+
+        async function verifyToken(token, secret) {
+            try {
+                const decoded = await jwt.verify(token, secret);
+                return true;
+            } catch (error) {
+                return false;
+            };
+        };
+
+        verifyToken(token, secretKey)
+            .then((isTokenValid) => {
+                if (!isTokenValid) {
+                    res.status(201).json({
+                        message: "공지목록 조회 완료!",
+                        status: 201,
+                        isOperator: false,
+                        totalNumber: total[0].total_rows,
+                        ...noticeListData
+                    });
+                    return;
+                };
+                res.status(200).json({
+                    message: "공지목록 조회 완료!",
+                    status: 200,
+                    isOperator: true,
+                    totalNumber: total[0].total_rows,
+                    ...noticeListData
+                });
+            })
+            .catch((error) => {
+                console.error(error);
+                res.status(500).json({
+                    message: "서버 오류...!",
+                    status: 500
+                });
+            });
     } catch (error) {
         console.error(error);
         res.status(403).json({
@@ -163,7 +166,7 @@ router.get('/:noticeId', async function (req, res) {
         };
 
         if (token) {
-            async function verifyToken (token, secret) {
+            async function verifyToken(token, secret) {
                 try {
                     const decoded = await jwt.verify(token, secret);
                     return true;

@@ -141,6 +141,124 @@ router.post('/mentors/upload', imageUploader.fields([
         });
 });
 
+router.post('/notice/upload', imageUploader.fields([
+    { name: "images", maxCount: 18 },
+    { name: "noticeInfoData" },
+    { name: "noticeContent" }
+]), async function(req, res) {
+    const token = req?.headers["authorization"];
+    const newDate = new Date();
+    const year = newDate.getFullYear();
+    const month = newDate.getMonth() + 1;
+    const day = newDate.getDate();
+    const date = `${year}-${month < 10 ? '0' : ''}${month}-${day < 10 ? '0' : ''}${day}`;
+
+    if (!token) {
+        res.status(401).json({
+            message: "토큰 인증 실패...!",
+            status: 401
+        });
+        return;
+    };
+
+    async function verifyToken(token, secret) {
+        try {
+            const decoded = await jwt.verify(token, secret);
+            return true;
+        } catch (error) {
+            return false;
+        };
+    };
+
+    verifyToken(token, secretKey)
+        .then((isTokenValid) => {
+            if (!isTokenValid) {
+                res.status(401).json({
+                    message: "토큰 인증 실패...!",
+                    status: 401
+                });
+                return;
+            };
+
+            try {
+                const noticeImages = req.files['images'] ? req.files['images']?.map((file) => file.location) : [null];
+                const { writer, englishTitle, japaneseTitle, title, state } = JSON.parse(req.body["noticeInfoData"]);
+                const { englishContent, japaneseContent, content } = JSON.parse(req.body["noticeContent"]);
+
+                const thumbnail = noticeImages[0] ? noticeImages[0] : null;
+
+                connection.query(
+                    `INSERT INTO notice (englishTitle, japaneseTitle, title, englishContent, japaneseContent, content, thumbnail, writer, state, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+                    [englishTitle, japaneseTitle, title, englishContent, japaneseContent, content, thumbnail, writer, state, date, date],
+                    function(error, results, fields) {
+                        if (error) throw error;
+                        console.log("Inserted successfully");
+
+                        const noticeId = results.insertId;
+
+                        noticeImages?.forEach((imageUrl) => {
+                            if (imageUrl.includes("ENG")) {
+                                connection.query(
+                                    `INSERT INTO notice_image (noticeId, imageUrl, languageData) VALUES (?, ?, ?);`,
+                                    [noticeId, imageUrl, "ENG"],
+                                    function(error, results, fields) {
+                                        if (error) throw error;
+                                        console.log("Inserted successfully");
+                                    }
+                                );
+                            } else if (imageUrl.includes("JPN")) {
+                                connection.query(
+                                    `INSERT INTO notice_image (noticeId, imageUrl, languageData) VALUES (?, ?, ?);`,
+                                    [noticeId, imageUrl, "JPN"],
+                                    function(error, results, fields) {
+                                        if (error) throw error;
+                                        console.log("Inserted successfully");
+                                    }
+                                );
+                            } else if (imageUrl.includes("KOR")) {
+                                connection.query(
+                                    `INSERT INTO notice_image (noticeId, imageUrl, languageData) VALUES (?, ?, ?);`,
+                                    [noticeId, imageUrl, "KOR"],
+                                    function(error, results, fields) {
+                                        if (error) throw error;
+                                        console.log("Inserted successfully");
+                                    }
+                                );
+                            } else {
+                                connection.query(
+                                    `INSERT INTO notice_image (noticeId, imageUrl, languageData) VALUES (?, ?, ?);`,
+                                    [noticeId, imageUrl, "ALL"],
+                                    function(error, results, fields) {
+                                        if (error) throw error;
+                                        console.log("Inserted successfully");
+                                    }
+                                );
+                            };
+                        }); 
+                    }
+                );
+
+                res.status(200).json({
+                    message: "업로드 성공!",
+                    status: 200
+                });
+            } catch (error) {
+                console.error(error);
+                res.status(403).json({
+                    message: "업로드 실패...!",
+                    status: 403
+                });
+            };
+        })
+        .catch((error) => {
+            console.error(error);
+            res.status(500).json({
+                message: "서버 오류...!",
+                status: 500
+            });
+        });
+});
+
 // 강사 정보 수정 api
 // router.patch('/mentors/update/:mentorsId', imageUploader.fields([
 //     { name: "banner_image", maxCount: 1 },
