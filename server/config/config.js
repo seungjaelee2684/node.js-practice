@@ -1,5 +1,7 @@
 const host = process.env.MYSQL_DATABASE_HOST;
-const password = process.env.MYSQL_DATABASE_PASSWORD
+const password = process.env.MYSQL_DATABASE_PASSWORD;
+const testhost = process.env.TEST_HOST;
+const testpassword = process.env.TEST_PASSWORD;
 
 module.exports = {
     host: host,

@@ -12,6 +12,7 @@ const notice = require('./routes/noticeRouter');
 const operator = require('./routes/operatorRouter');
 const banner = require('./routes/bannerRouter');
 const update = require('./routes/updateRouter');
+const test = require('./routes/testRouter');
 
 const PORT = 8080;
 
@@ -51,6 +52,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use('/api', test);
 app.use('/api', post);
 app.use('/api/mentors', mentor);
 app.use('/api/notice', notice);
